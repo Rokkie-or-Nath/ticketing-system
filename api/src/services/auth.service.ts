@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { pool } from '../config/db.js';
 
 export async function signup(name: string, email: string, password: string) {
@@ -33,6 +34,22 @@ export async function login(email: string, password: string) {
         user: { id: user.id, name: user.name, email: user.email, role: user.role },
         token,
     };
+}
+
+export async function logout(token: string) {
+    const decoded = jwt.decode(token) as { exp?: number } | null;
+    const expiresAt = decoded?.exp
+        ? new Date(decoded.exp * 1000)
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+
+    await pool.query(
+        `INSERT INTO revoked_tokens (token_hash, expires_at)
+     VALUES ($1, $2)
+     ON CONFLICT (token_hash) DO NOTHING`,
+        [tokenHash, expiresAt]
+    );
 }
 
 function generateToken(userId: string, role: string) {

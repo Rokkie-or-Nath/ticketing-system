@@ -2,7 +2,10 @@
 CREATE TYPE role AS ENUM ('employee', 'agent', 'admin');
 CREATE TYPE priority AS ENUM ('low', 'medium', 'high', 'critical');
 CREATE TYPE status AS ENUM ('open', 'in_progress', 'resolved', 'closed');
-CREATE TYPE activity_action AS ENUM ('status_changed', 'priority_changed', 'assigned', 'reassigned', 'comment_added');
+CREATE TYPE activity_action AS ENUM (
+  'status_changed', 'priority_changed', 'category_changed',
+  'assigned', 'reassigned', 'comment_added', 'ticket_deleted'
+);
 
 -- Users
 CREATE TABLE users (
@@ -26,7 +29,8 @@ CREATE TABLE tickets (
   assigned_to UUID REFERENCES users(id),
   created_at TIMESTAMP NOT NULL DEFAULT now(),
   updated_at TIMESTAMP NOT NULL DEFAULT now(),
-  resolved_at TIMESTAMP
+  resolved_at TIMESTAMP,
+  deleted_at TIMESTAMP
 );
 
 -- Ticket comments
@@ -76,3 +80,9 @@ INSERT INTO sla_rules (priority, response_time_minutes, resolution_time_minutes)
   ('medium', 240, 1440),
   ('high', 60, 480),
   ('critical', 15, 240);
+
+-- Revoked JWTs (for logout)
+CREATE TABLE revoked_tokens (
+  token_hash TEXT PRIMARY KEY,
+  expires_at TIMESTAMP NOT NULL
+);

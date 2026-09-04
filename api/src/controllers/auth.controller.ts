@@ -20,3 +20,14 @@ export async function login(req: Request, res: Response) {
         res.status(401).json({ error: { message: err.message } });
     }
 }
+
+export async function logout(req: Request, res: Response) {
+    try {
+        const authHeader = req.headers.authorization;
+        const token = authHeader!.split(' ')[1] as string;
+        await authService.logout(token);
+        res.status(204).send();
+    } catch (err: any) {
+        res.status(400).json({ error: { message: err.message } });
+    }
+}

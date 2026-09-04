@@ -15,6 +15,8 @@ router.get('/', ticketsController.listTickets);
 router.get('/:id', ticketsController.getTicketById);
 router.patch('/:id', requireRole('agent', 'admin'), ticketsController.updateTicket);
 router.patch('/:id/assign', requireRole('agent', 'admin'), ticketsController.assignTicket);
+router.delete('/:id', requireRole('admin'), ticketsController.deleteTicket);
+router.get('/:id/activity', ticketsController.getTicketActivity);
 router.use('/:id/comments', commentsRoutes);
 router.use('/:id/attachments', attachmentsRoutes);
 router.get('/:id/sla-status', slaController.getTicketSlaStatus);

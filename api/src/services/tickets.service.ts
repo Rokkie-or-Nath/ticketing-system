@@ -13,7 +13,6 @@ export async function createTicket(
 
     const ticket = result.rows[0];
 
-    // Log ticket creation in the activity log
     await pool.query(
         `INSERT INTO ticket_activity_log (ticket_id, actor_id, action_type, old_value, new_value)
      VALUES ($1, $2, 'status_changed', NULL, 'open')`,
@@ -31,11 +30,10 @@ export async function listTickets(
     const limit = filters.limit || 20;
     const offset = (page - 1) * limit;
 
-    const conditions: string[] = [];
+    const conditions: string[] = ['deleted_at IS NULL'];
     const values: any[] = [];
     let i = 1;
 
-    // Employees only see their own tickets; agents/admins see all
     if (user.role === 'employee') {
         conditions.push(`created_by = $${i++}`);
         values.push(user.userId);
@@ -59,7 +57,7 @@ export async function listTickets(
         i++;
     }
 
-    const whereClause = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const whereClause = `WHERE ${conditions.join(' AND ')}`;
 
     const dataResult = await pool.query(
         `SELECT * FROM tickets ${whereClause} ORDER BY created_at DESC LIMIT $${i} OFFSET $${i + 1}`,
@@ -82,9 +80,8 @@ export async function listTickets(
 export async function getTicketById(ticketId: string, user: { userId: string; role: string }) {
     const ticketResult = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
     const ticket = ticketResult.rows[0];
-    if (!ticket) throw new Error('Ticket not found');
+    if (!ticket || ticket.deleted_at) throw new Error('Ticket not found');
 
-    // Employees can only view their own tickets
     if (user.role === 'employee' && ticket.created_by !== user.userId) {
         throw new Error('Not authorized to view this ticket');
     }
@@ -96,12 +93,34 @@ export async function getTicketById(ticketId: string, user: { userId: string; ro
         [ticketId]
     );
 
+    const attachments = await pool.query(
+        'SELECT * FROM ticket_attachments WHERE ticket_id = $1 ORDER BY created_at ASC',
+        [ticketId]
+    );
+
     const activity = await pool.query(
         'SELECT * FROM ticket_activity_log WHERE ticket_id = $1 ORDER BY created_at ASC',
         [ticketId]
     );
 
-    return { ticket, comments: comments.rows, activity: activity.rows };
+    return { ticket, comments: comments.rows, attachments: attachments.rows, activity: activity.rows };
+}
+
+export async function getTicketActivity(ticketId: string, user: { userId: string; role: string }) {
+    const ticketResult = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
+    const ticket = ticketResult.rows[0];
+    if (!ticket || ticket.deleted_at) throw new Error('Ticket not found');
+
+    if (user.role === 'employee' && ticket.created_by !== user.userId) {
+        throw new Error('Not authorized to view this ticket');
+    }
+
+    const activity = await pool.query(
+        'SELECT * FROM ticket_activity_log WHERE ticket_id = $1 ORDER BY created_at ASC',
+        [ticketId]
+    );
+
+    return activity.rows;
 }
 
 export async function updateTicket(
@@ -111,7 +130,7 @@ export async function updateTicket(
 ) {
     const current = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
     const ticket = current.rows[0];
-    if (!ticket) throw new Error('Ticket not found');
+    if (!ticket || ticket.deleted_at) throw new Error('Ticket not found');
 
     const setClauses: string[] = [];
     const values: any[] = [];
@@ -141,7 +160,6 @@ export async function updateTicket(
         values
     );
 
-    // Log each changed field into the activity log
     if (updates.status && updates.status !== ticket.status) {
         await pool.query(
             `INSERT INTO ticket_activity_log (ticket_id, actor_id, action_type, old_value, new_value)
@@ -156,6 +174,13 @@ export async function updateTicket(
             [ticketId, actorId, ticket.priority, updates.priority]
         );
     }
+    if (updates.category && updates.category !== ticket.category) {
+        await pool.query(
+            `INSERT INTO ticket_activity_log (ticket_id, actor_id, action_type, old_value, new_value)
+       VALUES ($1, $2, 'category_changed', $3, $4)`,
+            [ticketId, actorId, ticket.category, updates.category]
+        );
+    }
 
     return result.rows[0];
 }
@@ -163,7 +188,7 @@ export async function updateTicket(
 export async function assignTicket(ticketId: string, actorId: string, assigneeId: string) {
     const current = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
     const ticket = current.rows[0];
-    if (!ticket) throw new Error('Ticket not found');
+    if (!ticket || ticket.deleted_at) throw new Error('Ticket not found');
 
     const result = await pool.query(
         `UPDATE tickets SET assigned_to = $1, updated_at = now() WHERE id = $2 RETURNING *`,
@@ -183,4 +208,18 @@ export async function assignTicket(ticketId: string, actorId: string, assigneeId
     );
 
     return result.rows[0];
+}
+
+export async function deleteTicket(ticketId: string, actorId: string) {
+    const current = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
+    const ticket = current.rows[0];
+    if (!ticket || ticket.deleted_at) throw new Error('Ticket not found');
+
+    await pool.query('UPDATE tickets SET deleted_at = now() WHERE id = $1', [ticketId]);
+
+    await pool.query(
+        `INSERT INTO ticket_activity_log (ticket_id, actor_id, action_type, old_value, new_value)
+     VALUES ($1, $2, 'ticket_deleted', NULL, NULL)`,
+        [ticketId, actorId]
+    );
 }

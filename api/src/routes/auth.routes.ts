@@ -6,6 +6,7 @@ const router = Router();
 
 router.post('/signup', authController.signup);
 router.post('/login', authController.login);
+router.post('/logout', authenticate, authController.logout);
 router.get('/me', authenticate, (req, res) => {
     res.json({ user: req.user });
 });

@@ -33,10 +33,14 @@ export async function updateSlaRule(
     return result.rows[0];
 }
 
-export async function getTicketSlaStatus(ticketId: string) {
+export async function getTicketSlaStatus(ticketId: string, user: { userId: string; role: string }) {
     const ticketResult = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
     const ticket = ticketResult.rows[0];
-    if (!ticket) throw new Error('Ticket not found');
+    if (!ticket || ticket.deleted_at) throw new Error('Ticket not found');
+
+    if (user.role === 'employee' && ticket.created_by !== user.userId) {
+        throw new Error('Not authorized to view this ticket');
+    }
 
     const ruleResult = await pool.query('SELECT * FROM sla_rules WHERE priority = $1', [ticket.priority]);
     const rule = ruleResult.rows[0];

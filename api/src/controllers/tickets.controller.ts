@@ -39,6 +39,15 @@ export async function getTicketById(req: Request, res: Response) {
     }
 }
 
+export async function getTicketActivity(req: Request, res: Response) {
+    try {
+        const activity = await ticketsService.getTicketActivity(req.params.id as string, req.user!);
+        res.status(200).json(activity);
+    } catch (err: any) {
+        res.status(err.message === 'Ticket not found' ? 404 : 403).json({ error: { message: err.message } });
+    }
+}
+
 export async function updateTicket(req: Request, res: Response) {
     try {
         const { status, priority, category } = req.body;
@@ -58,5 +67,14 @@ export async function assignTicket(req: Request, res: Response) {
         res.status(200).json(ticket);
     } catch (err: any) {
         res.status(400).json({ error: { message: err.message } });
+    }
+}
+
+export async function deleteTicket(req: Request, res: Response) {
+    try {
+        await ticketsService.deleteTicket(req.params.id as string, req.user!.userId);
+        res.status(204).send();
+    } catch (err: any) {
+        res.status(err.message === 'Ticket not found' ? 404 : 400).json({ error: { message: err.message } });
     }
 }

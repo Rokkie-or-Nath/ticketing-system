@@ -1,7 +1,9 @@
 import type { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import { pool } from '../config/db.js';
 
-export function authenticate(req: Request, res: Response, next: NextFunction) {
+export async function authenticate(req: Request, res: Response, next: NextFunction) {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -15,6 +17,16 @@ export function authenticate(req: Request, res: Response, next: NextFunction) {
             userId: string;
             role: 'employee' | 'agent' | 'admin';
         };
+
+        const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+        const revoked = await pool.query(
+            'SELECT 1 FROM revoked_tokens WHERE token_hash = $1',
+            [tokenHash]
+        );
+        if (revoked.rows.length > 0) {
+            return res.status(401).json({ error: { message: 'Token has been revoked' } });
+        }
+
         req.user = payload;
         next();
     } catch (err) {
