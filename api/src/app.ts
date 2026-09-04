@@ -20,4 +20,9 @@ app.use('/api/attachments', attachmentDeleteRoutes);
 
 app.get('/health', (req, res) => res.send('OK'));
 
-app.listen(process.env.PORT || 3001, () => console.log(`API running on port ${process.env.PORT || 3001}`));
+export default app;
+
+if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
+    const port = process.env.PORT || 3001;
+    app.listen(port, () => console.log(`API running on port ${port}`));
+}
