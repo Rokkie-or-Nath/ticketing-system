@@ -6,6 +6,7 @@ import ticketsRoutes from './routes/tickets.routes.ts';
 import slaRoutes from './routes/sla.routes.ts';
 import adminRoutes from './routes/admin.routes.ts';
 import attachmentDeleteRoutes from './routes/attachmentDelete.routes.ts';
+import { fileURLToPath } from 'url';
 
 const app = express();
 app.use(cors());
@@ -22,7 +23,8 @@ app.get('/health', (req, res) => res.send('OK'));
 
 export default app;
 
-if (process.argv[1] && process.argv[1].endsWith('app.ts')) {
+const isMain = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMain) {
     const port = process.env.PORT || 3001;
     app.listen(port, () => console.log(`API running on port ${port}`));
 }
