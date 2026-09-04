@@ -3,13 +3,26 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { LogOutIcon } from "@/components/icons";
+import { LayoutDashboard, LogOut, Plus, Ticket } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/dashboard", label: "Overview" },
-  { href: "/tickets", label: "Tickets" },
-  { href: "/tickets/new", label: "New Ticket" },
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/tickets", label: "Tickets", icon: Ticket },
+  { href: "/tickets/new", label: "New Ticket", icon: Plus },
 ];
+
+const ROLES = ["Employee", "Agent", "Admin"];
 
 export default function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -25,49 +38,83 @@ export default function AppShell({ children }: { children: ReactNode }) {
     return () => clearTimeout(id);
   }, []);
 
+  const selectRole = (label: string) => {
+    window.localStorage.setItem("ticketnet_role", label.toUpperCase());
+    setRole(label);
+  };
+
   return (
-    <div className="flex min-h-screen flex-col text-slate-200">
-      <header className="bg-slate-950/80 border-b border-slate-800/70 sticky top-0 z-30 backdrop-blur">
-        <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-6 px-6">
+    <div className="flex min-h-screen flex-col text-foreground">
+      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
+        <div className="mx-auto flex h-14 w-full max-w-7xl items-center gap-4 px-6">
           <Link href="/dashboard" className="flex items-center gap-2.5">
-            <span className="ring-white/5 flex size-7 items-center justify-center rounded-md bg-slate-800 text-[0.65rem] font-bold tracking-tight text-white ring-1 ring-inset">
+            <span className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md text-[0.65rem] font-bold tracking-tight ring-1 ring-inset ring-white/10">
               TN
             </span>
-            <span className="text-sm font-semibold tracking-tight text-white">TICKETNET</span>
+            <span className="text-foreground text-sm font-semibold tracking-tight">TICKETNET</span>
           </Link>
 
           <nav className="flex items-center gap-1">
             {NAV.map((item) => {
-              const active =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
-                <Link
+                <Button
                   key={item.href}
-                  href={item.href}
-                  className={`fx-nav rounded-md px-3 py-1.5 text-sm transition-colors ${
-                    active ? "fx-nav-active text-white" : "text-slate-400 hover:text-white"
-                  }`}
+                  asChild
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "gap-1.5 text-sm",
+                    active
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
                 >
-                  {item.label}
-                </Link>
+                  <Link href={item.href}>
+                    <item.icon className="size-4" />
+                    <span className="hidden sm:inline">{item.label}</span>
+                  </Link>
+                </Button>
               );
             })}
           </nav>
 
-          <div className="ml-auto flex items-center gap-3">
-            <span className="border-slate-800 bg-slate-900/60 hidden items-center gap-2 rounded-full border py-1 pl-1 pr-3 sm:flex">
-              <span className="ring-sky-500/20 flex size-6 items-center justify-center rounded-full bg-sky-500/10 text-[0.6rem] font-semibold text-sky-400 ring-1 ring-inset">
-                {role.slice(0, 2).toUpperCase()}
-              </span>
-              <span className="text-xs text-slate-300">{role}</span>
-            </span>
-            <Link
-              href="/"
-              title="Sign out"
-              className="fx-nav text-slate-400 hover:bg-slate-800/60 hover:text-white flex size-8 items-center justify-center rounded-md transition-colors"
-            >
-              <LogOutIcon className="size-4" />
-            </Link>
+          <div className="ml-auto flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="gap-2 px-1.5 hover:bg-accent data-[state=open]:bg-accent"
+                >
+                  <Avatar className="size-6 text-[0.6rem]">
+                    <AvatarFallback className="bg-secondary text-secondary-foreground">
+                      {role.slice(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-muted-foreground hidden text-xs sm:inline">{role}</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuLabel>Signed in as</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {ROLES.map((r) => (
+                  <DropdownMenuItem
+                    key={r}
+                    onSelect={() => selectRole(r)}
+                    className={cn(r === role && "text-primary")}
+                  >
+                    {r}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                  <Link href="/" className="text-destructive focus:text-destructive">
+                    <LogOut className="size-4" />
+                    Sign out
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </header>

@@ -2,29 +2,34 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { CheckCircle2 } from "lucide-react";
+import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
 import PageHeader from "@/components/PageHeader";
-import { CheckCircleIcon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import { PRIORITY_LABEL, type Category, type Priority } from "@/data/mock";
 
 const CATEGORIES: Category[] = ["hardware", "software", "network", "access", "other"];
 
-const PRIORITIES: { key: Priority; hint: string }[] = [
-  { key: "low", hint: "Non-urgent" },
-  { key: "medium", hint: "Normal workload" },
-  { key: "high", hint: "Impacts productivity" },
-  { key: "critical", hint: "System down / severe" },
-];
+const PRIORITIES: Priority[] = ["low", "medium", "high", "critical"];
 
-const PRIORITY_ACTIVE: Record<Priority, string> = {
-  low: "border-emerald-500/40 bg-emerald-500/5 text-emerald-400",
-  medium: "border-sky-500/40 bg-sky-500/5 text-sky-400",
-  high: "border-amber-500/40 bg-amber-500/5 text-amber-400",
-  critical: "border-red-500/40 bg-red-500/5 text-red-400",
+const PRIORITY_HINT: Record<Priority, string> = {
+  low: "Non-urgent",
+  medium: "Normal workload",
+  high: "Impacts productivity",
+  critical: "System down / severe",
 };
-
-const INPUT_CLS =
-  "h-10 w-full rounded-lg border border-slate-800 bg-slate-950/60 px-3.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-sky-500/20 lg:h-11 lg:px-4 lg:text-base";
 
 export default function NewTicketPage() {
   const [subject, setSubject] = useState("");
@@ -36,6 +41,9 @@ export default function NewTicketPage() {
   const createTicket = (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitted(true);
+    toast.success("Ticket created", {
+      description: "TK-1045 has been logged and routed for triage.",
+    });
   };
 
   return (
@@ -47,122 +55,114 @@ export default function NewTicketPage() {
       />
 
       {submitted ? (
-        <div className="fx-card border-emerald-500/20 bg-emerald-500/5 mx-auto mt-8 w-full max-w-2xl rounded-xl border p-6 sm:max-w-3xl lg:max-w-4xl lg:p-8 2xl:max-w-5xl">
-          <div className="flex items-center gap-3">
-            <span className="text-emerald-400 flex size-10 items-center justify-center rounded-full bg-emerald-500/10">
-              <CheckCircleIcon className="size-5" />
-            </span>
-            <div>
-              <h2 className="text-white text-lg font-semibold">Ticket created</h2>
-              <p className="text-emerald-400 text-sm">
-                <span className="font-mono">TK-1045</span> has been logged and routed for triage.
-              </p>
-            </div>
-          </div>
-          <div className="mt-6 flex items-center gap-3">
-            <Link
-              href="/tickets"
-              className="fx-btn-primary bg-white text-slate-950 hover:bg-slate-100 inline-flex h-9.5 items-center rounded-lg px-3.5 text-sm font-semibold lg:h-10 lg:px-4 lg:text-base transition-colors"
-            >
-              View queue
-            </Link>
-            <button
+        <Card className="mx-auto mt-10 w-full max-w-2xl p-8 text-center">
+          <span className="bg-emerald-500/15 text-emerald-400 mx-auto flex size-12 items-center justify-center rounded-full">
+            <CheckCircle2 className="size-6" />
+          </span>
+          <h2 className="text-foreground mt-5 text-xl font-semibold tracking-tight">
+            Ticket created
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm">
+            <span className="font-mono">TK-1045</span> has been logged and routed for triage.
+          </p>
+          <div className="mt-6 flex items-center justify-center gap-3">
+            <Button asChild>
+              <Link href="/tickets">View queue</Link>
+            </Button>
+            <Button
               type="button"
+              variant="outline"
               onClick={() => {
                 setSubmitted(false);
                 setSubject("");
                 setDescription("");
+                setCategory("hardware");
+                setPriority("medium");
               }}
-              className="fx-btn-ghost border-slate-800 hover:bg-slate-800/60 text-slate-300 inline-flex h-9.5 items-center rounded-lg border px-3.5 text-sm font-medium lg:h-10 lg:px-4 lg:text-base transition-colors"
             >
               Create another
-            </button>
+            </Button>
           </div>
-        </div>
+        </Card>
       ) : (
-        <form onSubmit={createTicket} className="mx-auto mt-8 w-full max-w-2xl space-y-6 sm:max-w-3xl lg:max-w-4xl 2xl:max-w-5xl">
-          <div className="fx-card border-slate-800 bg-slate-900/40 rounded-xl border p-6">
-            <label className="text-slate-300 block text-sm font-medium lg:text-base">
-              Subject
-              <input
-                required
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                placeholder="e.g. Laptop won't boot after update"
-                className={`${INPUT_CLS} mt-1.5`}
-              />
-            </label>
+        <form
+          onSubmit={createTicket}
+          className="mx-auto mt-8 w-full max-w-2xl space-y-6 sm:max-w-3xl"
+        >
+          <Card className="p-6">
+            <CardContent className="p-0">
+              <div className="grid gap-5 sm:grid-cols-2">
+<div className="sm:col-span-2">
+                  <Label htmlFor="subject" className="text-foreground">
+                    Subject
+                  </Label>
+                  <Input
+                    id="subject"
+                    required
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="e.g. Laptop won't boot after update"
+                    className="mt-1.5 h-10"
+                  />
+                </div>
 
-            <label className="text-slate-300 mt-5 block text-sm font-medium">
-              Description
-              <textarea
-                required
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                rows={5}
-                placeholder="Steps to reproduce, error messages, affected systems..."
-                className="mt-1.5 w-full rounded-lg border border-slate-800 bg-slate-950/60 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-slate-600 focus:ring-2 focus:ring-sky-500/20 lg:px-4 lg:py-3 lg:text-base"
-              />
-            </label>
-<div className="mt-5">
-              <span className="text-slate-300 block text-sm font-medium lg:text-base">Category</span>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-                {CATEGORIES.map((c) => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => setCategory(c)}
-                    className={`rounded-lg border px-3 py-2 text-sm font-medium capitalize transition-colors lg:px-4 lg:py-2.5 ${
-                      category === c
-                        ? "bg-sky-500/10 border-sky-500/40 text-sky-400"
-                        : "border-slate-800 bg-slate-950/60 hover:border-slate-700 text-slate-400"
-                    }`}
-                  >
-                    {c}
-                  </button>
-                ))}
-              </div>
-            </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="description" className="text-foreground">
+                    Description
+                  </Label>
+                  <Textarea
+                    id="description"
+                    required
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    rows={5}
+                    placeholder="Steps to reproduce, error messages, affected systems..."
+                    className="mt-1.5"
+                  />
+                </div>
 
-            <div className="mt-5">
-              <span className="text-slate-300 block text-sm font-medium lg:text-base">Priority</span>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-                {PRIORITIES.map((p) => (
-                  <button
-                    key={p.key}
-                    type="button"
-                    onClick={() => setPriority(p.key)}
-                    className={`rounded-lg border px-3 py-2.5 text-left transition-colors lg:px-4 lg:py-3 ${
-                      priority === p.key
-                        ? PRIORITY_ACTIVE[p.key]
-                        : "border-slate-800 bg-slate-950/60 hover:border-slate-700"
-                    }`}
-                  >
-                    <span className={`block text-sm font-medium ${priority === p.key ? "" : "text-slate-200"}`}>
-                      {PRIORITY_LABEL[p.key]}
-                    </span>
-                    <span className={`block text-xs ${priority === p.key ? "opacity-80" : "text-slate-500"}`}>
-                      {p.hint}
-                    </span>
-                  </button>
-                ))}
+                <div>
+                  <Label className="text-foreground">Category</Label>
+                  <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
+                    <SelectTrigger className="mt-1.5 h-10 capitalize">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="z-50">
+                      {CATEGORIES.map((c) => (
+                        <SelectItem key={c} value={c} className="capitalize">
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-foreground">Priority</Label>
+                  <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
+                    <SelectTrigger className="mt-1.5 h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="z-50">
+                      {PRIORITIES.map((p) => (
+                        <SelectItem key={p} value={p}>
+                          {PRIORITY_LABEL[p]} — {PRIORITY_HINT[p]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           <div className="flex items-center justify-center gap-3">
-            <Link
-              href="/tickets"
-              className="fx-btn-ghost border-slate-800 hover:bg-slate-800/60 text-slate-300 inline-flex h-9.5 items-center rounded-lg border px-3.5 text-sm font-medium lg:h-10 lg:px-4 lg:text-base transition-colors"
-            >
-              Cancel
-            </Link>
-            <button
-              type="submit"
-              className="fx-btn-primary bg-white text-slate-950 hover:bg-slate-100 inline-flex h-9.5 items-center rounded-lg px-4 text-sm font-semibold lg:h-10 lg:px-5 lg:text-base transition-colors"
-            >
+            <Button asChild type="button" variant="outline">
+              <Link href="/tickets">Cancel</Link>
+            </Button>
+            <Button type="submit" className="px-6">
               Create ticket
-            </button>
+            </Button>
           </div>
         </form>
       )}

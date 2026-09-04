@@ -2,17 +2,27 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { Plus } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import PageHeader from "@/components/PageHeader";
 import QueueToolbar, { type StatusTab } from "@/components/QueueToolbar";
 import TicketTable from "@/components/TicketTable";
-import { PlusIcon } from "@/components/icons";
+import { Button } from "@/components/ui/button";
 import { PRIORITY_ORDER, TICKETS, type Priority } from "@/data/mock";
 
 export default function TicketsPage() {
   const [query, setQuery] = useState("");
   const [statusTab, setStatusTab] = useState<StatusTab>("all");
   const [priority, setPriority] = useState<Priority | "any">("any");
+
+  const counts = useMemo(
+    () => ({
+      all: TICKETS.length,
+      open: TICKETS.filter((t) => t.status === "open" || t.status === "in_progress").length,
+      resolved: TICKETS.filter((t) => t.status === "resolved" || t.status === "closed").length,
+    }),
+    []
+  );
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -38,15 +48,14 @@ export default function TicketsPage() {
     <AppShell>
       <PageHeader
         title="Tickets"
-        subtitle="Track, triage,and resolve every support request."
+        subtitle="Track, triage, and resolve every support request."
         actions={
-          <Link
-            href="/tickets/new"
-            className="fx-btn-primary bg-white text-slate-950 hover:bg-slate-100 inline-flex h-9.5 items-center gap-1.5 rounded-lg px-3.5 text-sm font-semibold transition-colors"
-          >
-            <PlusIcon className="size-4" />
-            New Ticket
-          </Link>
+          <Button asChild>
+            <Link href="/tickets/new">
+              <Plus />
+              New Ticket
+            </Link>
+          </Button>
         }
       />
 
@@ -58,6 +67,7 @@ export default function TicketsPage() {
           onStatusTabChange={setStatusTab}
           priority={priority}
           onPriorityChange={setPriority}
+          counts={counts}
         />
         <TicketTable tickets={rows} />
       </div>

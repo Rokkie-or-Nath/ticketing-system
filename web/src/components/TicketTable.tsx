@@ -1,9 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { MoreHorizontalIcon } from "@/components/icons";
-import { userById, type Ticket } from "@/data/mock";
+import { MoreHorizontal } from "lucide-react";
+import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { CategoryBadge, PriorityBadge, StatusBadge } from "@/components/Badge";
+import { userById, type Ticket } from "@/data/mock";
 
 function initials(name: string) {
   return name
@@ -17,85 +34,98 @@ function initials(name: string) {
 
 export default function TicketTable({ tickets }: { tickets: Ticket[] }) {
   return (
-    <div className="bg-slate-900/40 border-slate-800 overflow-x-auto rounded-xl border">
-      <table className="w-full min-w-[760px] text-left text-sm">
-        <thead>
-          <tr className="border-slate-800 text-slate-500 border-b text-xs uppercase tracking-wider">
-            <th className="px-4 py-3 font-medium">Ticket ID</th>
-            <th className="px-4 py-3 font-medium">Subject</th>
-            <th className="px-4 py-3 font-medium">Category</th>
-            <th className="px-4 py-3 font-medium">Priority</th>
-            <th className="px-4 py-3 font-medium">Status</th>
-            <th className="px-4 py-3 font-medium">Assigned</th>
-            <th className="px-4 py-3" />
-          </tr>
-        </thead>
-        <tbody className="divide-slate-800/70 divide-y">
+    <div className="overflow-hidden rounded-xl border bg-card">
+      <Table>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            <TableHead className="px-4">Ticket ID</TableHead>
+            <TableHead className="px-4">Subject</TableHead>
+            <TableHead className="hidden px-4 md:table-cell">Category</TableHead>
+            <TableHead className="px-4">Priority</TableHead>
+            <TableHead className="px-4">Status</TableHead>
+            <TableHead className="hidden px-4 lg:table-cell">Assigned</TableHead>
+            <TableHead className="w-12 px-4" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {tickets.length === 0 && (
-            <tr>
-              <td colSpan={7} className="text-slate-500 px-4 py-10 text-center text-sm">
+            <TableRow className="hover:bg-transparent">
+              <TableCell colSpan={7} className="text-muted-foreground py-10 text-center">
                 No tickets match the current filters.
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           )}
-          {tickets.map((ticket) => (
-            <tr key={ticket.id} className="fx-row">
-              <td className="text-slate-400 px-4 py-3.5 font-mono text-xs">{ticket.id}</td>
-              <td className="px-4 py-3.5">
-                <Link
-                  href={`/tickets/${ticket.id}`}
-                  className="fx-link text-slate-200 hover:text-white font-medium transition-colors"
-                >
-                  {ticket.subject}
-                </Link>
-              </td>
-              <td className="px-4 py-3.5">
-                <CategoryBadge category={ticket.category} />
-              </td>
-              <td className="px-4 py-3.5">
-                <PriorityBadge priority={ticket.priority} />
-              </td>
-              <td className="px-4 py-3.5">
-                <StatusBadge status={ticket.status} />
-              </td>
-              <td className="px-4 py-3.5">
-                {ticket.assignedTo ? (
-                  <span className="flex items-center gap-2">
-                    <span className="ring-white/5 bg-slate-800 text-slate-300 flex size-6 items-center justify-center rounded-full text-[0.6rem] font-semibold ring-1 ring-inset">
-                      {initials(userById(ticket.assignedTo).name)}
+          {tickets.map((ticket) => {
+            const assignee = ticket.assignedTo ? userById(ticket.assignedTo) : null;
+            return (
+              <TableRow key={ticket.id} className="fx-row">
+                <TableCell className="text-muted-foreground px-4 py-3.5 font-mono text-xs">
+                  {ticket.id}
+                </TableCell>
+                <TableCell className="px-4 py-3.5">
+                  <Link
+                    href={`/tickets/${ticket.id}`}
+                    className="fx-link font-medium text-foreground hover:text-foreground/90"
+                  >
+                    {ticket.subject}
+                  </Link>
+                </TableCell>
+                <TableCell className="hidden px-4 py-3.5 md:table-cell">
+                  <CategoryBadge category={ticket.category} />
+                </TableCell>
+                <TableCell className="px-4 py-3.5">
+                  <PriorityBadge priority={ticket.priority} />
+                </TableCell>
+                <TableCell className="px-4 py-3.5">
+                  <StatusBadge status={ticket.status} />
+                </TableCell>
+                <TableCell className="hidden px-4 py-3.5 lg:table-cell">
+                  {assignee ? (
+                    <span className="flex items-center gap-2">
+                      <Avatar className="size-6 text-[0.6rem]">
+                        <AvatarFallback className="bg-secondary text-secondary-foreground">
+                          {initials(assignee.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-muted-foreground text-sm">{assignee.name}</span>
                     </span>
-                    <span className="text-slate-300">{userById(ticket.assignedTo).name}</span>
-                  </span>
-                ) : (
-                  <span className="text-slate-500">Unassigned</span>
-                )}
-              </td>
-              <td className="px-4 py-3.5 text-right">
-                <details className="group relative inline-block">
-                  <summary className="hover:bg-slate-800 hover:text-white text-slate-400 inline-flex size-8 cursor-pointer list-none select-none items-center justify-center rounded-md transition-colors">
-                    <MoreHorizontalIcon className="size-4" />
-                  </summary>
-                  <div className="bg-slate-900 border-slate-800 absolute right-0 z-20 mt-1 w-40 rounded-lg border p-1 shadow-xl shadow-black/40">
-                    <Link
-                      href={`/tickets/${ticket.id}`}
-                      className="text-slate-300 hover:bg-slate-800/70 hover:text-white block rounded-md px-3 py-1.5 text-sm"
-                    >
-                      View details
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => { void navigator.clipboard?.writeText(ticket.id); }}
-                      className="text-slate-300 hover:bg-slate-800/70 hover:text-white block w-full rounded-md px-3 py-1.5 text-left text-sm"
-                    >
-                      Copy ID
-                    </button>
-                  </div>
-                </details>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+                  ) : (
+                    <span className="text-muted-foreground/60 text-sm">Unassigned</span>
+                  )}
+                </TableCell>
+                <TableCell className="px-4 py-3.5 text-right">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-foreground size-8"
+                      >
+                        <MoreHorizontal className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem asChild>
+                        <Link href={`/tickets/${ticket.id}`}>View details</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => {
+                          void navigator.clipboard?.writeText(ticket.id);
+                          toast.success("ID copied to clipboard", {
+                            description: ticket.id,
+                          });
+                        }}
+                      >
+                        Copy ID
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              </TableRow>
+            );
+          })}
+        </TableBody>
+      </Table>
     </div>
   );
 }
