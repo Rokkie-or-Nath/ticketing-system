@@ -27,3 +27,6 @@ Thumbs.db
 
 # Testing
 coverage/
+
+# File Loc
+uploads/
