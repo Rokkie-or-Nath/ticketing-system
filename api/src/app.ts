@@ -4,6 +4,7 @@ import cors from 'cors';
 import authRoutes from './routes/auth.routes.js';
 import ticketsRoutes from './routes/tickets.routes.ts';
 import slaRoutes from './routes/sla.routes.ts';
+import adminRoutes from './routes/admin.routes.ts';
 
 const app = express();
 app.use(cors());
@@ -13,6 +14,7 @@ app.use('/uploads', express.static('uploads'));
 app.use('/api/auth', authRoutes);
 app.use('/api/tickets', ticketsRoutes);
 app.use('/api', slaRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/health', (req, res) => res.send('OK'));
 
