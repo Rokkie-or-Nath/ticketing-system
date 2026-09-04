@@ -78,3 +78,109 @@ export async function listTickets(
         total: parseInt(countResult.rows[0].count, 10),
     };
 }
+
+export async function getTicketById(ticketId: string, user: { userId: string; role: string }) {
+    const ticketResult = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
+    const ticket = ticketResult.rows[0];
+    if (!ticket) throw new Error('Ticket not found');
+
+    // Employees can only view their own tickets
+    if (user.role === 'employee' && ticket.created_by !== user.userId) {
+        throw new Error('Not authorized to view this ticket');
+    }
+
+    const comments = await pool.query(
+        `SELECT * FROM ticket_comments
+     WHERE ticket_id = $1 ${user.role === 'employee' ? 'AND is_internal = false' : ''}
+     ORDER BY created_at ASC`,
+        [ticketId]
+    );
+
+    const activity = await pool.query(
+        'SELECT * FROM ticket_activity_log WHERE ticket_id = $1 ORDER BY created_at ASC',
+        [ticketId]
+    );
+
+    return { ticket, comments: comments.rows, activity: activity.rows };
+}
+
+export async function updateTicket(
+    ticketId: string,
+    actorId: string,
+    updates: { status?: string; priority?: string; category?: string }
+) {
+    const current = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
+    const ticket = current.rows[0];
+    if (!ticket) throw new Error('Ticket not found');
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let i = 1;
+
+    if (updates.status) {
+        setClauses.push(`status = $${i++}`);
+        values.push(updates.status);
+    }
+    if (updates.priority) {
+        setClauses.push(`priority = $${i++}`);
+        values.push(updates.priority);
+    }
+    if (updates.category) {
+        setClauses.push(`category = $${i++}`);
+        values.push(updates.category);
+    }
+    setClauses.push(`updated_at = now()`);
+    if (updates.status === 'resolved') {
+        setClauses.push(`resolved_at = now()`);
+    }
+
+    values.push(ticketId);
+
+    const result = await pool.query(
+        `UPDATE tickets SET ${setClauses.join(', ')} WHERE id = $${i} RETURNING *`,
+        values
+    );
+
+    // Log each changed field into the activity log
+    if (updates.status && updates.status !== ticket.status) {
+        await pool.query(
+            `INSERT INTO ticket_activity_log (ticket_id, actor_id, action_type, old_value, new_value)
+       VALUES ($1, $2, 'status_changed', $3, $4)`,
+            [ticketId, actorId, ticket.status, updates.status]
+        );
+    }
+    if (updates.priority && updates.priority !== ticket.priority) {
+        await pool.query(
+            `INSERT INTO ticket_activity_log (ticket_id, actor_id, action_type, old_value, new_value)
+       VALUES ($1, $2, 'priority_changed', $3, $4)`,
+            [ticketId, actorId, ticket.priority, updates.priority]
+        );
+    }
+
+    return result.rows[0];
+}
+
+export async function assignTicket(ticketId: string, actorId: string, assigneeId: string) {
+    const current = await pool.query('SELECT * FROM tickets WHERE id = $1', [ticketId]);
+    const ticket = current.rows[0];
+    if (!ticket) throw new Error('Ticket not found');
+
+    const result = await pool.query(
+        `UPDATE tickets SET assigned_to = $1, updated_at = now() WHERE id = $2 RETURNING *`,
+        [assigneeId, ticketId]
+    );
+
+    await pool.query(
+        `INSERT INTO ticket_activity_log (ticket_id, actor_id, action_type, old_value, new_value)
+     VALUES ($1, $2, $3, $4, $5)`,
+        [
+            ticketId,
+            actorId,
+            ticket.assigned_to ? 'reassigned' : 'assigned',
+            ticket.assigned_to || null,
+            assigneeId,
+        ]
+    );
+
+    return result.rows[0];
+}
