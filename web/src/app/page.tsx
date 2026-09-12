@@ -15,7 +15,11 @@ import { usePageTransition } from "@/components/PageTransition";
 import { PriorityBadge, StatusBadge } from "@/components/Badge";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { SLA_RULES, TICKETS, userById } from "@/data/mock";
+import { useEffect, useState } from "react";
+import { getToken } from "@/lib/auth";
+import { fetchSlaRules, listTickets, userById } from "@/lib/api";
+import type { Ticket as TicketType } from "@/data/mock";
+import { SLA_RULES as MOCK_SLA, TICKETS as MOCK_TICKETS } from "@/data/mock";
 
 const ROLES = [
   {
@@ -69,29 +73,51 @@ const FEATURES = [
 ];
 export default function WelcomePage() {
   const navigate = usePageTransition();
+  const [tickets, setTickets] = useState<TicketType[]>(MOCK_TICKETS);
+  const [slaRules, setSlaRules] = useState(MOCK_SLA);
+  const [live, setLive] = useState(false);
+
+  useEffect(() => {
+    if (!getToken()) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const [rows, rules] = await Promise.all([listTickets(), fetchSlaRules()]);
+        if (cancelled) return;
+        setTickets(rows.data.length ? rows.data : MOCK_TICKETS);
+        setSlaRules(rules ?? MOCK_SLA);
+        setLive(true);
+      } catch {
+        if (!cancelled) setTickets(MOCK_TICKETS);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stats = useMemo(() => {
-    const active = TICKETS.filter(
+    const active = tickets.filter(
       (t) => t.status === "open" || t.status === "in_progress"
     );
-    const latest = Math.max(...TICKETS.map((t) => new Date(t.createdAt).getTime()));
+    const latest = Math.max(...tickets.map((t) => new Date(t.createdAt).getTime()));
     const breaches = active.filter((t) => {
       const mins = (latest - new Date(t.createdAt).getTime()) / 60000;
-      return mins > SLA_RULES[t.priority].resolution;
+      return mins > slaRules[t.priority].resolution;
     }).length;
     return {
       active: active.length,
       critical: active.filter((t) => t.priority === "critical").length,
-      resolved: TICKETS.filter(
+      resolved: tickets.filter(
         (t) => t.status === "resolved" || t.status === "closed"
       ).length,
-      agents: new Set(TICKETS.map((t) => t.assignedTo).filter(Boolean)).size,
+      agents: new Set(tickets.map((t) => t.assignedTo).filter(Boolean)).size,
       slaHealth:
         active.length === 0
           ? 100
           : Math.max(0, Math.round(((active.length - breaches) / active.length) * 100)),
     };
-  }, []);
+  }, [tickets, slaRules]);
 
   const METRICS = [
     { icon: <Ticket className="size-4" />, label: "Active tickets", value: stats.active, note: "in the queue" },
@@ -100,11 +126,11 @@ export default function WelcomePage() {
     { icon: <ShieldCheck className="size-4" />, label: "SLA health", value: `${stats.slaHealth}%`, note: "on target" },
   ];
 
-  const preview = TICKETS.slice(0, 4);
+  const preview = tickets.slice(0, 4);
 
   const pickRole = (key: string) => {
-    window.localStorage.setItem("ticketnet_role", key);
-    navigate("/dashboard");
+    void key;
+    navigate("/login");
   };
 
   return (
@@ -129,7 +155,7 @@ export default function WelcomePage() {
             <span className="bg-emerald-500 absolute inline-flex h-full w-full animate-ping rounded-full opacity-60" />
             <span className="bg-emerald-500 relative inline-flex size-1.5 rounded-full" />
           </span>
-          Live demo
+          {live ? "Live API" : "Demo data"}
         </Badge>
       </header>
 
@@ -196,7 +222,7 @@ export default function WelcomePage() {
             Enter the demo
           </h2>
           <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm">
-            Choose a role to explore the queue. No password required — sample data only.
+            Sign in with a real account to explore the queue.
           </p>
           <div className="mt-8 grid gap-3 text-left sm:grid-cols-2 lg:grid-cols-3">
             {ROLES.map((role) => (
@@ -264,14 +290,14 @@ export default function WelcomePage() {
             </div>
           </Card>
           <p className="text-muted-foreground/70 mt-3 text-center text-xs">
-            Pick a role above to open the full queue as that user.
+            Sign in to open the full queue as that role.
           </p>
         </section>
       </main>
 
       <footer className="relative z-10 border-t border-border py-6">
         <p className="text-muted-foreground/60 mx-auto max-w-6xl px-6 text-center text-xs">
-          TICKETNET — demo environment, no credentials required. Built with Next.js.
+          TICKETNET. Built with Next.js and a live Express API.
         </p>
       </footer>
     </div>

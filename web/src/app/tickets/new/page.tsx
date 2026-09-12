@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { PRIORITY_LABEL, type Category, type Priority } from "@/data/mock";
+import { createTicket as apiCreateTicket, messageOf } from "@/lib/api";
 
 const CATEGORIES: Category[] = ["hardware", "software", "network", "access", "other"];
 
@@ -37,13 +38,29 @@ export default function NewTicketPage() {
   const [category, setCategory] = useState<Category>("hardware");
   const [priority, setPriority] = useState<Priority>("medium");
   const [submitted, setSubmitted] = useState(false);
+  const [createdId, setCreatedId] = useState("");
+  const [busy, setBusy] = useState(false);
 
-  const createTicket = (e: React.FormEvent) => {
+  const createTicket = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
-    toast.success("Ticket created", {
-      description: "TK-1045 has been logged and routed for triage.",
-    });
+    setBusy(true);
+    try {
+      const created = await apiCreateTicket({
+        subject,
+        description,
+        category,
+        priority,
+      });
+      setCreatedId(created.id);
+      setSubmitted(true);
+      toast.success("Ticket created", {
+        description: `${created.id} has been logged and routed for triage.`,
+      });
+    } catch (err) {
+      toast.error(messageOf(err));
+    } finally {
+      setBusy(false);
+    }
   };
 
   return (
@@ -63,7 +80,7 @@ export default function NewTicketPage() {
             Ticket created
           </h2>
           <p className="text-muted-foreground mt-1 text-sm">
-            <span className="font-mono">TK-1045</span> has been logged and routed for triage.
+            <span className="font-mono">{createdId}</span> has been logged and routed for triage.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
             <Button asChild>
@@ -160,8 +177,8 @@ export default function NewTicketPage() {
             <Button asChild type="button" variant="outline">
               <Link href="/tickets">Cancel</Link>
             </Button>
-            <Button type="submit" className="px-6">
-              Create ticket
+            <Button type="submit" className="px-6" disabled={busy}>
+              {busy ? "Creating..." : "Create ticket"}
             </Button>
           </div>
         </form>

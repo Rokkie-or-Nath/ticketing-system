@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { LayoutDashboard, LogOut, Plus, Ticket } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -14,33 +14,32 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-
-const NAV = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-  { href: "/tickets", label: "Tickets", icon: Ticket },
-  { href: "/tickets/new", label: "New Ticket", icon: Plus },
-];
-
-const ROLES = ["Employee", "Agent", "Admin"];
+import { logout } from "@/lib/api";
+import { clearSession, getSessionUser, getToken } from "@/lib/auth";
 
 export default function AppShell({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  const [role, setRole] = useState("Employee");
+  const router = useRouter();
+  const [user, setUser] = useState<ReturnType<typeof getSessionUser>>(null);
 
   useEffect(() => {
     const id = setTimeout(() => {
-      const r = window.localStorage.getItem("ticketnet_role");
-      if (r) {
-        setRole(r.charAt(0) + r.slice(1).toLowerCase());
+      if (!getToken()) {
+        router.replace("/login");
+        return;
       }
+      setUser(getSessionUser());
     }, 0);
     return () => clearTimeout(id);
-  }, []);
+  }, [router]);
 
-  const selectRole = (label: string) => {
-    window.localStorage.setItem("ticketnet_role", label.toUpperCase());
-    setRole(label);
+  const signOut = async () => {
+    try {
+      await logout();
+    } catch {
+      // ignore network/API errors on sign-out; clear local session regardless
+    }
+    clearSession();
+    router.replace("/");
   };
 
   return (
@@ -55,63 +54,53 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </Link>
 
           <nav className="flex items-center gap-1">
-            {NAV.map((item) => {
-              const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-              return (
-                <Button
-                  key={item.href}
-                  asChild
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    "gap-1.5 text-sm",
-                    active
-                      ? "bg-accent text-foreground"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  <Link href={item.href}>
-                    <item.icon className="size-4" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </Link>
-                </Button>
-              );
-            })}
+            <Button asChild variant="ghost" size="sm" className="gap-1.5 text-sm">
+              <Link href="/dashboard">
+                <LayoutDashboard className="size-4" />
+                <span className="hidden sm:inline">Overview</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="gap-1.5 text-sm">
+              <Link href="/tickets">
+                <Ticket className="size-4" />
+                <span className="hidden sm:inline">Tickets</span>
+              </Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="gap-1.5 text-sm">
+              <Link href="/tickets/new">
+                <Plus className="size-4" />
+                <span className="hidden sm:inline">New ticket</span>
+              </Link>
+            </Button>
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="gap-2 px-1.5 hover:bg-accent data-[state=open]:bg-accent"
-                >
+                <Button variant="ghost" className="gap-2 px-1.5 hover:bg-accent data-[state=open]:bg-accent">
                   <Avatar className="size-6 text-[0.6rem]">
                     <AvatarFallback className="bg-secondary text-secondary-foreground">
-                      {role.slice(0, 2).toUpperCase()}
+                      {user ? user.name.slice(0, 2).toUpperCase() : "??"}
                     </AvatarFallback>
                   </Avatar>
-                  <span className="text-muted-foreground hidden text-xs sm:inline">{role}</span>
+                  <span className="text-muted-foreground hidden text-xs sm:inline">
+                    {user ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : ""}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-44">
                 <DropdownMenuLabel>Signed in as</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {ROLES.map((r) => (
-                  <DropdownMenuItem
-                    key={r}
-                    onSelect={() => selectRole(r)}
-                    className={cn(r === role && "text-primary")}
-                  >
-                    {r}
-                  </DropdownMenuItem>
-                ))}
+                <DropdownMenuItem disabled className="text-muted-foreground">
+                  {user?.name}
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/" className="text-destructive focus:text-destructive">
-                    <LogOut className="size-4" />
-                    Sign out
-                  </Link>
+                <DropdownMenuItem
+                  onSelect={() => void signOut()}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <LogOut className="size-4" />
+                  Sign out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

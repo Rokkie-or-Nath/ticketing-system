@@ -11,10 +11,10 @@ import TicketTable from "@/components/TicketTable";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useTicketData } from "@/lib/useTicketData";
+import { getSessionUser } from "@/lib/auth";
 import {
   PRIORITY_ORDER,
-  SLA_RULES,
-  TICKETS,
   type Priority,
 } from "@/data/mock";
 
@@ -36,26 +36,37 @@ const PRIORITY_BAR: Record<Priority, string> = {
   low: "bg-emerald-500",
 };
 
+// Fallback SLA targets if the API cannot be reached (minutes / resolution).
+const FALLBACK_SLA: Record<Priority, { response: number; resolution: number }> = {
+  critical: { response: 15, resolution: 240 },
+  high: { response: 30, resolution: 480 },
+  medium: { response: 120, resolution: 1440 },
+  low: { response: 480, resolution: 2880 },
+};
+
 export default function DashboardPage() {
   const [query, setQuery] = useState("");
   const [statusTab, setStatusTab] = useState<StatusTab>("all");
   const [priority, setPriority] = useState<Priority | "any">("any");
 
+  const { tickets, sla, loading, error } = useTicketData(getSessionUser());
+  const slaRules = sla ?? FALLBACK_SLA;
+
   const stats = useMemo(() => {
-    const active = TICKETS.filter(
+    const active = tickets.filter(
       (t) => t.status === "open" || t.status === "in_progress"
     );
-    const inProgress = TICKETS.filter((t) => t.status === "in_progress");
-    const critical = TICKETS.filter(
+    const inProgress = tickets.filter((t) => t.status === "in_progress");
+    const critical = tickets.filter(
       (t) => t.priority === "critical" && (t.status === "open" || t.status === "in_progress")
     );
-    const resolvedToday = TICKETS.filter((t) => t.status === "resolved" && sameDay(t.resolvedAt));
+    const resolvedToday = tickets.filter((t) => t.status === "resolved" && sameDay(t.resolvedAt));
     const agentsInProgress = new Set(inProgress.map((t) => t.assignedTo).filter(Boolean)).size;
 
     const now = new Date().getTime();
     const breaches = active.filter((t) => {
       const mins = (now - new Date(t.createdAt).getTime()) / 60000;
-      return mins > SLA_RULES[t.priority].resolution;
+      return mins > slaRules[t.priority].resolution;
     }).length;
 
     return {
@@ -63,46 +74,46 @@ export default function DashboardPage() {
       inProgress: inProgress.length,
       critical: critical.length,
       resolvedToday: resolvedToday.length,
-      pctActive: Math.round((active.length / TICKETS.length) * 100),
+      pctActive: tickets.length ? Math.round((active.length / tickets.length) * 100) : 0,
       agentsInProgress,
       slaHealthPct:
         active.length === 0
           ? 100
           : Math.max(0, Math.round(((active.length - breaches) / active.length) * 100)),
     };
-  }, []);
+  }, [tickets, slaRules]);
 
   const counts = useMemo(
     () => ({
-      all: TICKETS.length,
-      open: TICKETS.filter((t) => t.status === "open" || t.status === "in_progress").length,
-      resolved: TICKETS.filter((t) => t.status === "resolved" || t.status === "closed").length,
+      all: tickets.length,
+      open: tickets.filter((t) => t.status === "open" || t.status === "in_progress").length,
+      resolved: tickets.filter((t) => t.status === "resolved" || t.status === "closed").length,
     }),
-    []
+    [tickets]
   );
 
   const slaRows = useMemo(() => {
     const now = new Date().getTime();
     const order: Priority[] = ["critical", "high", "medium", "low"];
     return order.map((p) => {
-      const active = TICKETS.filter(
+      const active = tickets.filter(
         (t) => t.priority === p && (t.status === "open" || t.status === "in_progress")
       );
       const pct = active.length
         ? Math.round(
             active.reduce((sum, t) => {
               const elapsed = (now - new Date(t.createdAt).getTime()) / 60000;
-              return sum + Math.min(100, (elapsed / SLA_RULES[p].resolution) * 100);
+              return sum + Math.min(100, (elapsed / slaRules[p].resolution) * 100);
             }, 0) / active.length
           )
         : 0;
       return { priority: p, count: active.length, pct };
     });
-  }, []);
+  }, [tickets, slaRules]);
 
   const rows = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return [...TICKETS]
+    return [...tickets]
       .filter((t) => {
         if (statusTab === "open") return t.status === "open" || t.status === "in_progress";
         if (statusTab === "resolved") return t.status === "resolved" || t.status === "closed";
@@ -134,7 +145,15 @@ export default function DashboardPage() {
           </Button>
         }
       />
-<div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+{loading && (
+        <p className="text-muted-foreground mt-8 text-sm">Loading queue data...</p>
+      )}
+      {error && (
+        <Card className="mt-8 border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+          {error} — showing fallback sample data.
+        </Card>
+      )}
+      <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Total Active Tickets"
           value={stats.active}
