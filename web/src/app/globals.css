@@ -3,95 +3,188 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* ============================================================
+   DESIGN TOKENS — single source of truth
+   All values are CSS custom properties; no hex/rgb in components.
+   ============================================================ */
+
 :root {
-  --radius: 0.625rem;
-  --background: oklch(0.129 0.028 264.695);
-  --foreground: oklch(0.985 0.002 247.858);
-  --card: oklch(0.192 0.03 264.5);
-  --card-foreground: oklch(0.985 0.002 247.858);
-  --popover: oklch(0.214 0.033 260.031);
-  --popover-foreground: oklch(0.985 0.002 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.257 0.037 262.035);
-  --secondary-foreground: oklch(0.985 0.002 247.858);
-  --muted: oklch(0.257 0.037 262.035);
-  --muted-foreground: oklch(0.708 0.04 256.788);
-  --accent: oklch(0.257 0.037 262.035);
-  --accent-foreground: oklch(0.985 0.002 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.985 0.002 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.722 0.106 235.723);
+  /* Geometry */
+  --radius: 0.375rem; /* 6px — tight, professional */
+
+  /* ── Surfaces (dark default) ── */
+  --background:        oklch(0.13 0.018 264);
+  --surface:           oklch(0.18 0.022 264);
+  --surface-raised:    oklch(0.22 0.026 264);
+  --foreground:        oklch(0.95 0.008 240);
+
+  /* Card / popover map to surface tokens */
+  --card:              var(--surface);
+  --card-foreground:   var(--foreground);
+  --popover:           var(--surface-raised);
+  --popover-foreground: var(--foreground);
+
+  /* ── Brand — service blue ── */
+  --primary:           oklch(0.60 0.15 248);
+  --primary-foreground: oklch(0.98 0.002 248);
+
+  /* ── Neutral scale ── */
+  --secondary:         oklch(0.24 0.024 264);
+  --secondary-foreground: var(--foreground);
+  --muted:             oklch(0.24 0.024 264);
+  --muted-foreground:  oklch(0.68 0.036 256);
+  --accent:            oklch(0.26 0.028 264);
+  --accent-foreground: var(--foreground);
+
+  /* ── Semantic feedback ── */
+  --success:           oklch(0.72 0.17 150);
+  --success-foreground: oklch(0.98 0.01 150);
+  --warning:           oklch(0.77 0.16 75);
+  --warning-foreground: oklch(0.15 0.02 75);
+  --destructive:       oklch(0.65 0.20 22);
+  --destructive-foreground: oklch(0.98 0.002 22);
+  --info:              oklch(0.66 0.16 235);
+  --info-foreground:   oklch(0.98 0.002 235);
+
+  /* ── Lines & inputs ── */
+  --border:            oklch(0.32 0.020 264 / 55%);
+  --input:             oklch(1 0 0 / 10%);
+  --ring:              oklch(0.60 0.15 248);
+
+  /* ── Sidebar rail ── */
+  --sidebar:                    oklch(0.11 0.016 264);
+  --sidebar-foreground:         var(--foreground);
+  --sidebar-primary:            var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent:             oklch(0.22 0.024 264);
+  --sidebar-accent-foreground:  var(--foreground);
+  --sidebar-border:             oklch(0.28 0.018 264 / 50%);
+  --sidebar-ring:               var(--ring);
+
+  /* ── Charts ── */
   --chart-1: oklch(0.646 0.222 250.2);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.985 0.002 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0.002 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.985 0.002 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
 }
 
+/* ── Light mode ── */
+.light {
+  --background:        oklch(0.98 0.004 264);
+  --surface:           oklch(1 0 0);
+  --surface-raised:    oklch(0.97 0.006 264);
+  --foreground:        oklch(0.15 0.020 264);
+
+  --card:              var(--surface);
+  --card-foreground:   var(--foreground);
+  --popover:           var(--surface-raised);
+  --popover-foreground: var(--foreground);
+
+  --primary:           oklch(0.50 0.15 248);
+  --primary-foreground: oklch(0.98 0.002 248);
+
+  --secondary:         oklch(0.93 0.008 264);
+  --secondary-foreground: var(--foreground);
+  --muted:             oklch(0.93 0.008 264);
+  --muted-foreground:  oklch(0.48 0.030 256);
+  --accent:            oklch(0.91 0.010 264);
+  --accent-foreground: var(--foreground);
+
+  --success:           oklch(0.55 0.17 150);
+  --success-foreground: oklch(0.98 0.01 150);
+  --warning:           oklch(0.60 0.16 75);
+  --warning-foreground: oklch(0.98 0.01 75);
+  --destructive:       oklch(0.55 0.20 22);
+  --destructive-foreground: oklch(0.98 0.002 22);
+  --info:              oklch(0.50 0.16 235);
+  --info-foreground:   oklch(0.98 0.002 235);
+
+  --border:            oklch(0.82 0.012 264 / 80%);
+  --input:             oklch(0 0 0 / 8%);
+  --ring:              oklch(0.50 0.15 248);
+
+  --sidebar:                    oklch(0.96 0.006 264);
+  --sidebar-foreground:         var(--foreground);
+  --sidebar-primary:            var(--primary);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent:             oklch(0.91 0.010 264);
+  --sidebar-accent-foreground:  var(--foreground);
+  --sidebar-border:             oklch(0.82 0.012 264 / 60%);
+  --sidebar-ring:               var(--ring);
+}
+
+/* ── Tailwind v4 theme mapping ── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
+  --color-background:              var(--background);
+  --color-foreground:              var(--foreground);
+  --color-card:                    var(--card);
+  --color-card-foreground:         var(--card-foreground);
+  --color-popover:                 var(--popover);
+  --color-popover-foreground:      var(--popover-foreground);
+  --color-primary:                 var(--primary);
+  --color-primary-foreground:      var(--primary-foreground);
+  --color-secondary:               var(--secondary);
+  --color-secondary-foreground:    var(--secondary-foreground);
+  --color-muted:                   var(--muted);
+  --color-muted-foreground:        var(--muted-foreground);
+  --color-accent:                  var(--accent);
+  --color-accent-foreground:       var(--accent-foreground);
+  --color-destructive:             var(--destructive);
+  --color-destructive-foreground:  var(--destructive-foreground);
+  --color-success:                 var(--success);
+  --color-success-foreground:      var(--success-foreground);
+  --color-warning:                 var(--warning);
+  --color-warning-foreground:      var(--warning-foreground);
+  --color-info:                    var(--info);
+  --color-info-foreground:         var(--info-foreground);
+  --color-border:                  var(--border);
+  --color-input:                   var(--input);
+  --color-ring:                    var(--ring);
+  --color-chart-1:                 var(--chart-1);
+  --color-chart-2:                 var(--chart-2);
+  --color-chart-3:                 var(--chart-3);
+  --color-chart-4:                 var(--chart-4);
+  --color-chart-5:                 var(--chart-5);
+  --color-sidebar:                 var(--sidebar);
+  --color-sidebar-foreground:      var(--sidebar-foreground);
+  --color-sidebar-primary:         var(--sidebar-primary);
   --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent:          var(--sidebar-accent);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar-border:          var(--sidebar-border);
+  --color-sidebar-ring:            var(--sidebar-ring);
+
+  --radius-sm:  calc(var(--radius) - 2px);
+  --radius-md:  var(--radius);
+  --radius-lg:  calc(var(--radius) + 2px);
+  --radius-xl:  calc(var(--radius) + 6px);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+
 html {
+  /* Default to dark; JS ThemeProvider will add .light or .dark */
   color-scheme: dark;
 }
 
+html.light {
+  color-scheme: light;
+}
+
 ::selection {
-  background: rgb(14 165 233 / 0.3);
+  background: oklch(0.60 0.15 248 / 0.30);
   color: white;
 }
 
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgb(30 41 59) transparent;
+  scrollbar-color: oklch(0.35 0.020 264) transparent;
 }
 
 @layer base {
@@ -104,183 +197,118 @@ html {
   }
 }
 
-/* ===== LIVE BACKGROUND ===== */
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
 
-.aurora-bg {
-  position: fixed;
-  inset:0;
-  z-index:-10;
-  overflow:hidden;
-  pointer-events:none;
-}
-
-.aurora-blob {
-  position:absolute;
-  display:block;
-  opacity:0.4;
-  will-change:transform;
-}
-
-.aurora-blob.a {
-  width:44rem;
-  height:44rem;
-  top:-8rem;
-  left:-6rem;
-  background:radial-gradient(circle, rgba(56,189,248,0.32), transparent 65%);
-  animation:auroraA 26s ease-in-out infinite alternate;
-}
-
-.aurora-blob.b {
-  width:34rem;
-  height:34rem;
-  top:28%;
-  right:-10rem;
-  background:radial-gradient(circle, rgba(99,102,241,0.3), transparent 65%);
-  animation:auroraB 32s ease-in-out infinite alternate;
-}
-
-.aurora-blob.c {
-  width:30rem;
-  height:30rem;
-  bottom:-8rem;
-  left:20%;
-  background:radial-gradient(circle, rgba(129,140,248,0.34), transparent 65%);
-  animation:auroraC 38s ease-in-out infinite alternate;
-}
-
-@keyframes auroraA {
-  from { transform:translate3d(0,0,0) scale(1); }
-  to { transform:translate3d(120px,80px,0) scale(1.15); }
-}
-
-@keyframes auroraB {
-  from { transform:translate3d(0,0,0) scale(1); }
-  to { transform:translate3d(-100px,60px,0) scale(1.1); }
-}
-
-@keyframes auroraC {
-  from { transform:translate3d(0,0,0) scale(1); }
-  to { transform:translate3d(80px,-80px,0) scale(1.2); }
-}
-
-/* ===== CURSOR SPOTLIGHT ===== */
-
-.spotlight {
-  position: fixed;
-  inset:0;
-  z-index:-5;
-  pointer-events:none;
-  background:radial-gradient(640px circle at var(--spot-x, 50%) var(--spot-y, 50%), rgba(56,189,248,0.09), transparent 70%);
-}
-
-/* ===== HOVER EFFECTS ===== */
-
-.fx-card {
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease, background-color  0.18s ease;
-}
-
-.fx-card:hover {
-  transform:translateY(-2px);
-  border-color:rgb(51 65 85 / 0.9);
-  box-shadow:0 8px 30px -12px rgba(56,189,248,0.22),0 1px 2px rgba(0,0,0,0.45);
-}
-
-.fx-btn-primary {
-  transition: transform 0.15s ease, box-shadow  0.15s ease, background-color 0.15s ease;
-}
-
-.fx-btn-primary:hover {
-  transform:translateY(-1px);
-  box-shadow:0 0 22px -6px rgba(255,255,255,0.55), inset 0 0 0 1px rgba(255,255,255,0.3);
-}
-
-.fx-btn-ghost {
-  transition: transform 0.15s ease, box-shadow  0.15s ease, border-color 0.15s ease, background-color  0.15s ease;
-}
-
-.fx-btn-ghost:hover {
-  transform:translateY(-1px);
-  border-color:rgb(71 85 105 / 0.9);
-  box-shadow:0 0 14px -8px rgba(148,163,184,0.5);
-}
-
+/* Surface hover — used on table rows and list items */
 .fx-row {
-  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color 0.1s ease;
 }
-
 .fx-row:hover {
-  background-color:rgba(30,41,59,0.55) !important;
-  box-shadow:inset 2px 0 0 rgba(56,189,248,0.6);
+  background-color: oklch(from var(--accent) l c h / 0.5);
 }
 
+/* Card hover border lift */
+.fx-card {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.fx-card:hover {
+  border-color: oklch(from var(--primary) l c h / 0.45);
+}
+
+/* Underline link animation */
 .fx-link {
-  position:relative;
+  position: relative;
   transition: color 0.15s ease;
 }
-
 .fx-link::after {
-  content:"";
-  position:absolute;
-  left:0;
-  bottom:-2px;
-  height:1px;
-  width:0;
-  background:currentColor;
-  opacity:0.6;
-  transition:width 0.2s ease;
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  height: 1px;
+  width: 0;
+  background: currentColor;
+  opacity: 0.5;
+  transition: width 0.18s ease;
 }
-
 .fx-link:hover::after {
-  width:100%;
+  width: 100%;
 }
 
+/* Sidebar nav item */
 .fx-nav {
-  transition: background-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  width: 100%;
+  border-radius: var(--radius);
+  padding: 0.4rem 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  transition: background-color 0.1s ease, color 0.1s ease;
 }
-
 .fx-nav:hover {
-  background-color:rgba(30,41,59,0.6);
-  box-shadow:0 0 12px -6px rgba(56,189,248,0.35);
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-foreground);
 }
-
 .fx-nav-active {
-  background-color:rgba(30,41,59,0.9);
-  color:white;
-  box-shadow:inset 0 0 0 1px rgba(148,163,184,0.15),0 0 10px -6px rgba(56,189,248,0.2);
+  background-color: var(--sidebar-accent);
+  color: var(--sidebar-foreground);
+  box-shadow: inset 0 0 0 1px oklch(1 0 0 / 6%);
 }
 
-/* ===== PAGE TRANSITIONS ===== */
+/* ============================================================
+   PAGE TRANSITIONS
+   ============================================================ */
 
 .page-enter {
-  animation:page-enter-in 320ms ease-out both;
+  animation: page-enter-in 280ms ease-out both;
 }
 
 @keyframes page-enter-in {
-  from { opacity:0; transform:translateY(10px); }
-  to { opacity:1; transform:translateY(0); }
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ===== STAGGERED RISE (landing page) ===== */
-
 .fx-rise {
-  animation: rise-in 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: rise-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes rise-in {
-  from { opacity: 0; transform: translateY(16px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ============================================================
+   SKELETON PULSE (used before shadcn/ui Skeleton is available)
+   ============================================================ */
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--muted) 25%,
+    oklch(from var(--muted) calc(l + 0.04) c h) 50%,
+    var(--muted) 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease infinite;
+  border-radius: var(--radius);
+}
+
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
 @media (prefers-reduced-motion: reduce) {
-  .aurora-blob.a, .aurora-blob.b, .aurora-blob.c {
-    animation:none;
-  }
-  .spotlight {
-    display:none;
-  }
-  .page-enter {
-    animation:none;
-  }
-  .fx-rise {
-    animation:none;
-  }
+  .page-enter, .fx-rise { animation: none; }
+  .fx-row, .fx-card, .fx-link { transition: none; }
+  .skeleton { animation: none; }
 }

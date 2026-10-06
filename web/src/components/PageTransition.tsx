@@ -101,7 +101,7 @@ export default function PageTransition({ children }: { children: ReactNode }) {
     <TransitionContext.Provider value={navigate}>
       <div
         aria-hidden="true"
-        className={`fixed inset-0 z-50 bg-slate-950 transition-opacity duration-150 ${
+        className={`fixed inset-0 z-50 bg-background transition-opacity duration-150 ${
           fading ? "opacity-100" : "opacity-0 pointer-events-none"
         }`}
       />

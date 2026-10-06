@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowRight, ArrowUp, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
 import PageHeader from "@/components/PageHeader";
@@ -18,19 +18,61 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { PRIORITY_LABEL, type Category, type Priority } from "@/data/mock";
+import { cn } from "@/lib/utils";
+import { type Category, type Priority } from "@/data/mock";
 import { createTicket as apiCreateTicket, messageOf } from "@/lib/api";
 
-const CATEGORIES: Category[] = ["hardware", "software", "network", "access", "other"];
+const CATEGORIES: { value: Category; label: string }[] = [
+  { value: "hardware", label: "Hardware" },
+  { value: "software", label: "Software" },
+  { value: "network", label: "Network" },
+  { value: "access", label: "Access" },
+  { value: "other", label: "Other" },
+];
 
-const PRIORITIES: Priority[] = ["low", "medium", "high", "critical"];
+const PRIORITY_OPTIONS: {
+  value: Priority;
+  label: string;
+  hint: string;
+  icon: React.ReactNode;
+  classes: string;
+  activeClasses: string;
+}[] = [
+  {
+    value: "low",
+    label: "Low",
+    hint: "Non-urgent, no productivity impact",
+    icon: <ArrowDown className="size-4" />,
+    classes: "border-border hover:border-success/50",
+    activeClasses: "border-success/60 bg-success/8 ring-1 ring-success/30",
+  },
+  {
+    value: "medium",
+    label: "Medium",
+    hint: "Normal workload, some impact",
+    icon: <ArrowRight className="size-4" />,
+    classes: "border-border hover:border-info/50",
+    activeClasses: "border-info/60 bg-info/8 ring-1 ring-info/30",
+  },
+  {
+    value: "high",
+    label: "High",
+    hint: "Impacts productivity significantly",
+    icon: <ArrowUp className="size-4" />,
+    classes: "border-border hover:border-warning/50",
+    activeClasses: "border-warning/60 bg-warning/8 ring-1 ring-warning/30",
+  },
+  {
+    value: "critical",
+    label: "Critical",
+    hint: "System down or severe outage",
+    icon: <AlertCircle className="size-4" />,
+    classes: "border-border hover:border-destructive/50",
+    activeClasses: "border-destructive/60 bg-destructive/8 ring-1 ring-destructive/30",
+  },
+];
 
-const PRIORITY_HINT: Record<Priority, string> = {
-  low: "Non-urgent",
-  medium: "Normal workload",
-  high: "Impacts productivity",
-  critical: "System down / severe",
-};
+const DESC_MAX = 2000;
 
 export default function NewTicketPage() {
   const [subject, setSubject] = useState("");
@@ -45,12 +87,7 @@ export default function NewTicketPage() {
     e.preventDefault();
     setBusy(true);
     try {
-      const created = await apiCreateTicket({
-        subject,
-        description,
-        category,
-        priority,
-      });
+      const created = await apiCreateTicket({ subject, description, category, priority });
       setCreatedId(created.id);
       setSubmitted(true);
       toast.success("Ticket created", {
@@ -66,28 +103,29 @@ export default function NewTicketPage() {
   return (
     <AppShell>
       <PageHeader
-        title="New Ticket"
-        subtitle="Describe the issue and we'll route it to the right team."
+        eyebrow="New request"
+        title="Report an issue"
+        subtitle="Describe the problem and we'll route it to the right team."
         center
       />
 
       {submitted ? (
-        <Card className="mx-auto mt-10 w-full max-w-2xl p-8 text-center">
-          <span className="bg-emerald-500/15 text-emerald-400 mx-auto flex size-12 items-center justify-center rounded-full">
+        <Card className="mx-auto mt-10 w-full max-w-lg p-8 text-center">
+          <span className="mx-auto flex size-12 items-center justify-center rounded-full bg-success/15 text-success">
             <CheckCircle2 className="size-6" />
           </span>
-          <h2 className="text-foreground mt-5 text-xl font-semibold tracking-tight">
-            Ticket created
+          <h2 className="mt-5 text-lg font-semibold tracking-tight text-foreground">
+            Ticket submitted
           </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            <span className="font-mono">{createdId}</span> has been logged and routed for triage.
+          <p className="mt-1 text-sm text-muted-foreground">
+            <span className="font-mono text-foreground">{createdId}</span> has been logged and routed for triage.
           </p>
           <div className="mt-6 flex items-center justify-center gap-3">
-            <Button asChild>
+            <Button asChild size="sm">
               <Link href="/tickets">View queue</Link>
             </Button>
             <Button
-              type="button"
+              size="sm"
               variant="outline"
               onClick={() => {
                 setSubmitted(false);
@@ -97,88 +135,101 @@ export default function NewTicketPage() {
                 setPriority("medium");
               }}
             >
-              Create another
+              Submit another
             </Button>
           </div>
         </Card>
       ) : (
-        <form
-          onSubmit={createTicket}
-          className="mx-auto mt-8 w-full max-w-2xl space-y-6 sm:max-w-3xl"
-        >
-          <Card className="p-6">
-            <CardContent className="p-0">
-              <div className="grid gap-5 sm:grid-cols-2">
-<div className="sm:col-span-2">
-                  <Label htmlFor="subject" className="text-foreground">
-                    Subject
-                  </Label>
-                  <Input
-                    id="subject"
-                    required
-                    value={subject}
-                    onChange={(e) => setSubject(e.target.value)}
-                    placeholder="e.g. Laptop won't boot after update"
-                    className="mt-1.5 h-10"
-                  />
-                </div>
+        <form onSubmit={createTicket} className="mx-auto mt-8 w-full max-w-2xl space-y-5">
+          <Card>
+            <CardContent className="p-6 space-y-5">
+              {/* Subject */}
+              <div className="space-y-1.5">
+                <Label htmlFor="subject" className="text-xs font-medium">Subject</Label>
+                <Input
+                  id="subject"
+                  required
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="e.g. Laptop won't boot after update"
+                  className="h-9 text-sm"
+                />
+              </div>
 
-                <div className="sm:col-span-2">
-                  <Label htmlFor="description" className="text-foreground">
-                    Description
-                  </Label>
-                  <Textarea
-                    id="description"
-                    required
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    rows={5}
-                    placeholder="Steps to reproduce, error messages, affected systems..."
-                    className="mt-1.5"
-                  />
+              {/* Description */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="description" className="text-xs font-medium">Description</Label>
+                  <span className={cn(
+                    "text-[0.65rem] tabular-nums",
+                    description.length > DESC_MAX * 0.9 ? "text-warning" : "text-muted-foreground"
+                  )}>
+                    {description.length} / {DESC_MAX}
+                  </span>
                 </div>
+                <Textarea
+                  id="description"
+                  required
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value.slice(0, DESC_MAX))}
+                  rows={5}
+                  placeholder="Steps to reproduce, error messages, affected systems…"
+                  className="text-sm resize-none"
+                />
+              </div>
 
-                <div>
-                  <Label className="text-foreground">Category</Label>
-                  <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
-                    <SelectTrigger className="mt-1.5 h-10 capitalize">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-50">
-                      {CATEGORIES.map((c) => (
-                        <SelectItem key={c} value={c} className="capitalize">
-                          {c}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+              {/* Category */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium">Category</Label>
+                <Select value={category} onValueChange={(v) => setCategory(v as Category)}>
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CATEGORIES.map((c) => (
+                      <SelectItem key={c.value} value={c.value} className="text-sm">
+                        {c.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <div>
-                  <Label className="text-foreground">Priority</Label>
-                  <Select value={priority} onValueChange={(v) => setPriority(v as Priority)}>
-                    <SelectTrigger className="mt-1.5 h-10">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="z-50">
-                      {PRIORITIES.map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {PRIORITY_LABEL[p]} — {PRIORITY_HINT[p]}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {/* Priority — visual radio cards */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">Priority</Label>
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {PRIORITY_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setPriority(opt.value)}
+                      className={cn(
+                        "flex flex-col items-start gap-1.5 rounded-lg border p-3 text-left transition-all",
+                        priority === opt.value ? opt.activeClasses : opt.classes
+                      )}
+                    >
+                      <span className={cn(
+                        "flex size-7 items-center justify-center rounded-md",
+                        priority === opt.value ? "bg-current/10" : "bg-muted"
+                      )}>
+                        {opt.icon}
+                      </span>
+                      <span className="text-xs font-semibold text-foreground">{opt.label}</span>
+                      <span className="text-[0.65rem] text-muted-foreground leading-snug">{opt.hint}</span>
+                    </button>
+                  ))}
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <div className="flex items-center justify-center gap-3">
-            <Button asChild type="button" variant="outline">
+            <Button asChild type="button" variant="outline" size="sm">
               <Link href="/tickets">Cancel</Link>
             </Button>
-            <Button type="submit" className="px-6" disabled={busy}>
-              {busy ? "Creating..." : "Create ticket"}
+            <Button type="submit" size="sm" className="px-6" disabled={busy}>
+              {busy ? "Creating…" : "Create ticket"}
             </Button>
           </div>
         </form>

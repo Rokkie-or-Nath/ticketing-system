@@ -1,17 +1,16 @@
 import type { ReactNode } from "react";
-import { ArrowDown, ArrowUp } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { TrendingDown, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const ACCENTS = {
-  default: "bg-secondary text-muted-foreground",
-  red: "bg-destructive/15 text-destructive",
-  sky: "bg-sky-500/15 text-sky-400",
-  emerald: "bg-emerald-500/15 text-emerald-400",
-  amber: "bg-amber-500/15 text-amber-400",
+const ACCENT_CLASSES = {
+  default: { icon: "bg-secondary text-muted-foreground", ring: "" },
+  sky:     { icon: "bg-info/15 text-info",               ring: "ring-info/20" },
+  emerald: { icon: "bg-success/15 text-success",         ring: "ring-success/20" },
+  amber:   { icon: "bg-warning/15 text-warning",         ring: "ring-warning/20" },
+  red:     { icon: "bg-destructive/15 text-destructive", ring: "ring-destructive/20" },
 } as const;
 
-type Accent = keyof typeof ACCENTS;
+type Accent = keyof typeof ACCENT_CLASSES;
 
 export default function MetricCard({
   label,
@@ -22,42 +21,37 @@ export default function MetricCard({
   accent = "default",
 }: {
   label: string;
-  value: number;
+  value: number | string;
   icon: ReactNode;
   trend?: string;
   trendTone?: "positive" | "negative" | "neutral";
   accent?: Accent;
 }) {
-  const TrendIcon = trendTone === "positive" ? ArrowUp : trendTone === "negative" ? ArrowDown : null;
+  const { icon: iconClass } = ACCENT_CLASSES[accent];
+  const TrendIcon = trendTone === "positive" ? TrendingUp : trendTone === "negative" ? TrendingDown : null;
+
   return (
-    <Card className="fx-card group p-5">
+    <div className="rounded-lg border border-border bg-card p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
-        <span
-          className={cn(
-            "flex size-9 items-center justify-center rounded-lg transition-transform duration-200 group-hover:scale-110",
-            ACCENTS[accent]
-          )}
-        >
+        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+        <span className={cn("flex size-7 items-center justify-center rounded-md", iconClass)}>
           {icon}
         </span>
-        {trend && (
-          <span
-            className={cn(
-              "flex items-center gap-1 text-xs",
-              trendTone === "negative"
-                ? "text-destructive"
-                : trendTone === "positive"
-                  ? "text-emerald-400"
-                  : "text-muted-foreground"
-            )}
-          >
-            {TrendIcon && <TrendIcon className="size-3" />}
-            {trend}
-          </span>
-        )}
       </div>
-      <p className="text-foreground mt-5 text-2xl font-semibold tracking-tight">{value}</p>
-      <p className="text-muted-foreground mt-1 text-sm">{label}</p>
-    </Card>
+      <p className="text-2xl font-semibold tracking-tight text-foreground leading-none">
+        {value}
+      </p>
+      {trend && (
+        <p className={cn(
+          "flex items-center gap-1 text-xs",
+          trendTone === "negative" ? "text-destructive"
+          : trendTone === "positive" ? "text-success"
+          : "text-muted-foreground"
+        )}>
+          {TrendIcon && <TrendIcon className="size-3" />}
+          {trend}
+        </p>
+      )}
+    </div>
   );
 }

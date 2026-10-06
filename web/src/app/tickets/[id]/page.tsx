@@ -6,11 +6,13 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Paperclip, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import AppShell from "@/components/AppShell";
-import { CategoryBadge, PriorityBadge, StatusBadge } from "@/components/Badge";
+import { CategoryBadge, PriorityBadge, SlaBadge, StatusBadge } from "@/components/Badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import {
   Select,
@@ -201,7 +203,25 @@ export default function TicketDetailPage() {
   if (loading) {
     return (
       <AppShell>
-        <p className="text-muted-foreground">Loading ticket...</p>
+        <div className="space-y-4">
+          <Skeleton className="h-4 w-32" />
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Skeleton className="h-5 w-16 rounded-full" />
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+            <Skeleton className="h-7 w-2/3" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
+            <div className="space-y-4">
+              <Skeleton className="h-32 rounded-lg" />
+              <Skeleton className="h-48 rounded-lg" />
+            </div>
+            <Skeleton className="h-64 rounded-lg" />
+          </div>
+        </div>
       </AppShell>
     );
   }
@@ -225,6 +245,18 @@ export default function TicketDetailPage() {
 
   const slaTarget = sla
     ? `${sla.responseTargetMinutes}m / ${sla.resolutionTargetMinutes}m`
+    : null;
+
+  const slaElapsedPct = sla
+    ? Math.min(100, Math.round((sla.elapsedMinutes / sla.resolutionTargetMinutes) * 100))
+    : null;
+
+  const slaTone = sla
+    ? sla.resolutionBreached
+      ? ("breached" as const)
+      : slaElapsedPct !== null && slaElapsedPct >= 75
+        ? ("at-risk" as const)
+        : ("on-track" as const)
     : null;
 
   return (
@@ -468,22 +500,32 @@ export default function TicketDetailPage() {
                   {slaTarget ?? "--"}
                 </span>
               </div>
-              {sla && (
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Resolution left</span>
-                  <span
-                    className={
-                      sla.resolutionBreached
-                        ? "text-destructive font-medium"
-                        : "text-foreground/90 font-mono text-xs"
-                    }
-                  >
-                    {sla.resolutionBreached
-                      ? "Breached"
-                      : sla.resolutionRemainingMinutes === null
-                        ? "Done"
-                        : `${sla.resolutionRemainingMinutes}m`}
-                  </span>
+              {sla && slaTone && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">SLA status</span>
+                    <SlaBadge
+                      tone={slaTone}
+                      label={
+                        sla.resolutionBreached
+                          ? "Breached"
+                          : sla.resolutionRemainingMinutes === null
+                            ? "Done"
+                            : `${sla.resolutionRemainingMinutes}m left`
+                      }
+                    />
+                  </div>
+                  {slaElapsedPct !== null && (
+                    <Progress
+                      value={slaElapsedPct}
+                      className="h-1.5 bg-muted"
+                      indicatorClassName={
+                        slaTone === "breached" ? "bg-destructive"
+                        : slaTone === "at-risk" ? "bg-warning"
+                        : "bg-success"
+                      }
+                    />
+                  )}
                 </div>
               )}
               <Button
